@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Snake</title>
+        <style>
+            html, body {
+                margin: 0;
+                font: 16px sans-serif;
+            }
+            canvas {
+                display: block;
+                border: 1px solid #dddddd;
+                margin-top: 2em;
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: 4px;
+            }
+            #text {
+                text-align: center            
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="snake" width="640" height="480"></canvas>
+        <p id="text">You're playing Snake!</p>
+        
+        <script>
+            // twitter.com/matthijsewoud
+            canvas = document.getElementById('snake');
+            text = document.getElementById('text');
+            ctx = canvas.getContext('2d');
+            gameState = "play";
+            f = 0; // start counting the frames son
+            s = 0; // seconds
+            dir = "right";
+            score = 0;
+            snakeCoord = {x: 3, y: 3}; // Grid is 16 * 12, but with zero-based indexing
+            snakeTrail = 0;
+            snakeTrailMovements = [];
+            fruits = [spawnFruit()];
+            
+            function spawnFruit() {
+                // spawn random fruit coords, keep checking if they match snake + trail
+                var fruit = {};
+                fruit.x = Math.round( Math.random() * 15 );
+                fruit.y = Math.round( Math.random() * 11 );
+                return fruit;
+            }
+                        
+            function gameFrame() {
+                f++;
+                
+                // Run into a wall
+                if(snakeCoord.x > 15 || snakeCoord.x < 0 || snakeCoord.y < 0 || snakeCoord.y > 11) {
+                    gameState = "failed";
+                    text.innerHTML = "Oh no, you've crashed! Your score was " + score + (score < 2 ? ' :(' : ' :)');
+                }
+                
+                // Run into tail
+                for(i=0;i<snakeTrail;i++) {
+                    if(snakeCoord.x == snakeTrailMovements[i].x && snakeCoord.y == snakeTrailMovements[i].y) {
+                        gameState = "failed";
+                        text.innerHTML = "Oh no, you've crashed! Your score was " + score + (score < 2 ? ' :(' : ' :)');
+                    }
+                }
+                
+                if(gameState !== "play") {
+                    return;
+                }
+                
+                // Do this every x frames; determines gamespeed
+                if(f % 5 == 0) {
+                    s++;
+                    
+                    // Eat fruit
+                    for(i=0;i<fruits.length;i++) {
+                        if(fruits[i].x == snakeCoord.x && fruits[i].y == snakeCoord.y) {
+                            fruits.splice(i, 1);
+                            snakeTrail++;
+                            score = score + 5;
+                        }
+                    }
+
+                    // clear canvas
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, 640, 480);
+
+                    // draw snake block
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(snakeCoord.x * 40 , snakeCoord.y * 40, 40, 40);
+                    
+                    // draw blocks for the snake trail
+                    for(i=0;i<snakeTrail;i++) {
+                        ctx.fillRect(snakeTrailMovements[i].x * 40 , snakeTrailMovements[i].y * 40, 40, 40);
+                    }
+                    
+                    // draw fruits
+                    ctx.fillStyle = "green";
+                    for(i=0;i<fruits.length;i++) {
+                        ctx.beginPath();
+                        ctx.arc(fruits[i].x * 40 + 20, fruits[i].y * 40 + 20, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    
+                    // Note coordinates for snake trail
+                    snakeTrailMovements.unshift( {x: snakeCoord.x, y: snakeCoord.y} );
+
+                    // trail shouldn't be longer than length of snake
+                    if(snakeTrail > 0 && snakeTrailMovements.length > snakeTrail) {
+//                        snakeTrailMovements.splice(0)
+                    }
+                    
+                    // Move snake position
+                    switch(dir) {
+                        case "right":
+                            snakeCoord.x++
+                            break;
+                        case "left":
+                            snakeCoord.x--
+                            break;
+                        case "up":
+                            snakeCoord.y--
+                            break;
+                        case "down":
+                            snakeCoord.y++
+                            break;
+                        default:
+                            console.log('eh');
+                            break;
+                    }
+                    
+                }
+                
+                // fruit spawn speed
+                if(f % 300 == 0) {
+                    fruits[fruits.length] = spawnFruit();
+                }
+                
+                requestAnimationFrame(gameFrame);
+            }
+            
+            window.addEventListener('keydown', function(e) {
+                // w = 87 a = 65 s = 83 d = 68, left: 37 down: 40
+                switch(e.keyCode) {
+                    case 87:
+                    case 38:
+                        e.preventDefault();
+                        dir = "up";
+                        break;
+                    case 83:
+                    case 40:
+                        e.preventDefault();
+                        dir = "down";
+                        break;
+                    case 65:
+                    case 37:
+                        dir = "left";
+                        break;
+                    case 68:
+                    case 39:
+                        dir = "right";
+                        break;
+                    default:
+                        break;
+                }
+            });
+            
+            // start the game
+            gameFrame();
+            
+        </script>
+    </body>
+</html>
